@@ -11,6 +11,7 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -21,17 +22,34 @@ import android.widget.TextView;
 import android.widget.Toast;
 import com.example.yangenneng0.myapplication.adapter.PersonAdapter;
 import com.example.yangenneng0.myapplication.dao.PersonDAO;
+import com.example.yangenneng0.myapplication.db.HistoryMessage;
+import com.example.yangenneng0.myapplication.model.ChatMsgEntity;
 import com.example.yangenneng0.myapplication.model.Person;
+import com.example.yangenneng0.myapplication.model.User;
+import com.example.yangenneng0.myapplication.smack.SmackManager;
 import com.example.yangenneng0.myapplication.utils.*;
+import com.example.yangenneng0.myapplication.viewUI.ChatMainActivity;
 import com.example.yangenneng0.myapplication.viewUI.QQmoodActivity;
 import com.example.yangenneng0.myapplication.viewUI.QzoneActivity;
 import com.example.yangenneng0.myapplication.viewUI.RegistActivity;
 import com.example.yangenneng0.myapplication.viewUI.SettingsActivity;
 import com.getbase.floatingactionbutton.FloatingActionButton;
 
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+import org.jivesoftware.smack.chat.Chat;
+import org.jivesoftware.smack.chat.ChatManager;
+import org.jivesoftware.smack.chat.ChatManagerListener;
+import org.jivesoftware.smack.chat.ChatMessageListener;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -57,6 +75,8 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+
 
          /*--------------联系人 begin--------------*/
         tv = (TextView) findViewById(R.id.tv);
@@ -114,6 +134,46 @@ public class MainActivity extends AppCompatActivity
         //TextView loginName= (TextView) findViewById(R.id.loginname);
         //loginName.setText(APPglobal.USERNAME);
 
+
+        //设置聊天的监听器
+        ChatManager chatmanager = SmackManager.getInstance().getChatManager();
+        chatmanager.addChatListener(new ChatManagerListener() {
+            @Override
+            public void chatCreated(Chat chat, boolean arg1) {
+                chat.addMessageListener(new ChatMessageListener() {
+                    @Override
+                    public void processMessage(Chat chat, org.jivesoftware.smack.packet.Message message) {
+                        try {
+                            JSONObject json = new JSONObject(message.getBody());
+                            //将数据存到数据库
+                            HistoryMessage historyMessage=new HistoryMessage();
+                            historyMessage.setName(json.optString("fromNickName"));
+                            historyMessage.setReceiver(User.getInstance().getName());
+                            historyMessage.setContent(json.optString("messageContent"));
+                            historyMessage.setDate(getDate());
+                            historyMessage.save();
+
+                            ChatMsgEntity chatMsgEntity=new ChatMsgEntity();
+                            chatMsgEntity.setName(json.optString("fromNickName"));
+                            chatMsgEntity.setDate(getDate());  //设置格式化的发送时间
+                            chatMsgEntity.setMessage(json.optString("messageContent")); //设置发送内容
+                            chatMsgEntity.setMsgType(true);      //设置消息类型，true 接受的 false发送的
+
+                            ChatMainActivity.mDataArrays.add(chatMsgEntity);
+                            Log.d("test233", "processMessage: 接受提醒");
+
+                            EventBus.getDefault().post(chatMsgEntity);
+
+
+                            //mAdapter.notifyDataSetChanged();// 通知ListView，数据已发生改变
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+
+            }
+        });
     }
 
     /**
@@ -342,4 +402,30 @@ public class MainActivity extends AppCompatActivity
         return super.onKeyDown(keyCode, event);
     }
 
+        //获取当前时间
+    private String getDate() {
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+        return format.format(new Date());
+    }
+
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        EventBus.getDefault().unregister(this);
+    }
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if(!EventBus.getDefault().isRegistered(this)) {
+            EventBus.getDefault().register(this);
+        }
+    }
+
+    //eventbus的处理函数
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void update(ChatMsgEntity message) {
+        Toast.makeText(MainActivity.this,"你收到新消息了",Toast.LENGTH_SHORT).show();
+    }
 }

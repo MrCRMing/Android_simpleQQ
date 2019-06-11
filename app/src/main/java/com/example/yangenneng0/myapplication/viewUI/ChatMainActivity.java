@@ -21,6 +21,9 @@ import com.example.yangenneng0.myapplication.model.User;
 import com.example.yangenneng0.myapplication.smack.SmackManager;
 import com.example.yangenneng0.myapplication.utils.APPglobal;
 
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.chat.Chat;
 import org.jivesoftware.smack.chat.ChatManager;
@@ -50,21 +53,12 @@ public class ChatMainActivity extends Activity implements View.OnClickListener {
     private ListView mListView;         // 聊天记录列表
     static private ChatMsgViewAdapter mAdapter;// 聊天记录视图的Adapter
     private String Name;//聊天对象名字
-    static  List<ChatMsgEntity> mDataArrays = new ArrayList<ChatMsgEntity>();// 聊天记录对象数组
+    static public  List<ChatMsgEntity> mDataArrays = new ArrayList<ChatMsgEntity>();// 聊天记录对象数组
     private Chat chat;//聊天实体类
 
     private String TAG = "length";
 
-    Handler handler = new Handler(){
-        @Override
-        public void handleMessage(android.os.Message msg) {
-            super.handleMessage(msg);
-            Log.d(TAG, "handleMessage: sequence1" + mAdapter);
 
-            mAdapter.notifyDataSetChanged();// 通知ListView，数据已发生改变
-            mListView.setSelection(mListView.getCount() - 1);// 接受一条消息时，ListView显示选择最后一项
-        }
-    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,6 +66,9 @@ public class ChatMainActivity extends Activity implements View.OnClickListener {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chatmain);
+
+        //注册事件
+        EventBus.getDefault().register(this);
 
         TextView textView= (TextView) findViewById(R.id.chatname);
         Bundle bundle = this.getIntent().getExtras();
@@ -82,66 +79,6 @@ public class ChatMainActivity extends Activity implements View.OnClickListener {
         String JID=Name+"@212.64.92.236";
         //创建聊天
         chat=SmackManager.getInstance().createChat(JID);
-        //设置该聊天的监听器
-        ChatManager chatmanager = SmackManager.getInstance().getChatManager();
-
-
-
-        chatmanager.addChatListener(new ChatManagerListener() {
-
-            @Override
-            public void chatCreated(Chat chat, boolean arg1) {
-                chat.addMessageListener(new ChatMessageListener() {
-
-
-                    @Override
-                    public void processMessage(Chat chat, Message message) {
-
-
-                        try {
-                            JSONObject json = new JSONObject(message.getBody());
-                            //将数据存到数据库
-                            HistoryMessage historyMessage=new HistoryMessage();
-                            historyMessage.setName(json.optString("fromNickName"));
-                            historyMessage.setReceiver(User.getInstance().getName());
-                            historyMessage.setContent(json.optString("messageContent"));
-                            historyMessage.setDate(getDate());
-                            historyMessage.save();
-
-
-                            ChatMsgEntity chatMsgEntity=new ChatMsgEntity();
-                            chatMsgEntity.setName(json.optString("fromNickName"));
-                            chatMsgEntity.setDate(getDate());  //设置格式化的发送时间
-                            chatMsgEntity.setMessage(json.optString("messageContent")); //设置发送内容
-                            chatMsgEntity.setMsgType(true);      //设置消息类型，true 接受的 false发送的
-                            Log.d(TAG, "handleMessage: sequence2");
-                            mDataArrays.add(chatMsgEntity);
-                            Log.d(TAG, "handleMessage: sequence3");
-//                            new Thread(){
-//                                @Override
-//                                public void run() {
-//                                    super.run();
-//                                    android.os.Message message1 = new android.os.Message();
-//                                    handler.sendMessage(message1);
-//                                }
-//                            }.start();
-                            update();
-                            Log.d(TAG, "handleMessage: sequence4");
-                            //mAdapter.notifyDataSetChanged();// 通知ListView，数据已发生改变
-
-
-
-
-
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-
-                    }
-                });
-
-            }
-        });
         initView();// 初始化view
         initData();// 初始化数据
     }
@@ -200,7 +137,7 @@ public class ChatMainActivity extends Activity implements View.OnClickListener {
 
             mAdapter = new ChatMsgViewAdapter(this, mDataArrays);
             mListView.setAdapter(mAdapter);
-
+            mListView.setSelection(mListView.getCount() - 1);// 接受一条消息时，ListView显示选择最后一项
 
     }
 
@@ -281,10 +218,19 @@ public class ChatMainActivity extends Activity implements View.OnClickListener {
     }
 
 
-    private void update()
-    {
-        android.os.Message message11 = new android.os.Message();
-        handler.sendMessage(message11);
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        EventBus.getDefault().unregister(this);
+    }
+
+    //eventbus的处理函数
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void update(ChatMsgEntity message) {
+        mAdapter.notifyDataSetChanged();// 通知ListView，数据已发生改变
+        mListView.setSelection(mListView.getCount() - 1);// 接受一条消息时，ListView显示选择最后一项
     }
 
 }
