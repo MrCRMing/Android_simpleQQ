@@ -1,7 +1,5 @@
 package com.example.yangenneng0.myapplication.model;
 
-import com.example.yangenneng0.myapplication.utils.PinYinUtils;
-
 /**
  * User: yangenneng
  * DateTime: 2016/12/13 10:43
@@ -14,23 +12,23 @@ public class Person {
     private String headerWord; //拼音首字母
 
     private String username;//用户名
-    private String password;//密码
+
 
     public  Person(){}
 
     public  Person(String name){
         this.name=name;
-        this.password="";
+
         this.username="";
-        this.pinyin = PinYinUtils.getPinyin(name);
+        this.pinyin = "  ";
         headerWord = pinyin.substring(0, 1);
     }
 
-    public Person(String name,String username,String password) {
+    public Person(String name,String username) {
         this.username=username;
-        this.password=password;
+
         this.name = name;
-        this.pinyin = PinYinUtils.getPinyin(name);
+        this.pinyin = "  ";
         headerWord = pinyin.substring(0, 1);
     }
 
@@ -58,11 +56,5 @@ public class Person {
         this.username = username;
     }
 
-    public String getPassword() {
-        return password;
-    }
 
-    public void setPassword(String password) {
-        this.password = password;
-    }
 }

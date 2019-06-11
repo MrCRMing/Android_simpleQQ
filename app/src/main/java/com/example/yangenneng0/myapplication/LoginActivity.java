@@ -12,6 +12,8 @@ import android.view.View.OnClickListener;
 import android.view.inputmethod.EditorInfo;
 import android.widget.*;
 import com.example.yangenneng0.myapplication.dao.PersonDAO;
+import com.example.yangenneng0.myapplication.model.User;
+import com.example.yangenneng0.myapplication.smack.SmackManager;
 import com.example.yangenneng0.myapplication.utils.APPglobal;
 import com.example.yangenneng0.myapplication.viewUI.RegistActivity;
 
@@ -126,11 +128,18 @@ public class LoginActivity extends AppCompatActivity {
             focusView.requestFocus();//标签用于指定屏幕内的焦点View。
         } else {//合法信息
            //登陆跳转逻辑
-            PersonDAO personDAO=new PersonDAO();
-            boolean sussess=personDAO.chechLogin(email,password);
+
+            boolean sussess= false;
+            try {
+                sussess = SmackManager.getInstance().login(email,password);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             if(sussess){  //信息合法
-                APPglobal.NAME=PersonDAO.findNameByUsername(email);//保存用户登录信息到全局变量中
-                APPglobal.USERNAME=email;
+
+                User.getInstance().setAccount(email);
+                User.getInstance().setPassword(password);
+                User.getInstance().setName(email);
                 Intent intent=new Intent();
                 intent.setClass(LoginActivity.this,MainActivity.class);
                 LoginActivity.this.startActivity(intent);

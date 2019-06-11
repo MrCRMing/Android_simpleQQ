@@ -259,6 +259,7 @@ public class MainActivity extends AppCompatActivity
                 return lhs.getPinyin().compareTo(rhs.getPinyin());
             }
         });
+
     }
 
 

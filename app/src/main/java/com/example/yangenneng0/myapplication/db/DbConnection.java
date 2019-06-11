@@ -13,7 +13,7 @@ import android.database.sqlite.SQLiteOpenHelper;
  */
 public class DbConnection  extends SQLiteOpenHelper {
 
-    private final static int DATABASE_VERSION=1;//数据库版本号
+    private final static int DATABASE_VERSION=2;//数据库版本号
     private final static String DATABASE_NAME="simpleqq.db";//数据库名
     private static Context context;         //context对象
 
@@ -48,6 +48,12 @@ public class DbConnection  extends SQLiteOpenHelper {
                 +" content varchar(30) not null,"
                 +" time varchar(30) not null,"
                 +" person  varchar(30) not null);";
+        db.execSQL(sql2);
+        //tb_message表 用户名 信息内容 时间
+        String sql3="create table tb_message("
+                +" user varchar(30) not null,"
+                +" content varchar(30) not null,"
+                +" time  varchar(30) not null);";
         db.execSQL(sql2);
 
     }

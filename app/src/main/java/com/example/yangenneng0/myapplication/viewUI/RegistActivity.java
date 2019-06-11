@@ -109,7 +109,7 @@ public class RegistActivity   extends AppCompatActivity {
             String mrename=rename.getText().toString();
             String memail=mEmailView.getText().toString();
             String mpassword=repassword.getText().toString();
-            Person person=new Person(mrename,memail,mpassword);
+            Person person=new Person(mrename,memail);
 
             PersonDAO personDAO=new PersonDAO();
             boolean isSucess=false;

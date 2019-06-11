@@ -4,8 +4,13 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import com.example.yangenneng0.myapplication.db.DbConnection;
 import com.example.yangenneng0.myapplication.model.Person;
+import com.example.yangenneng0.myapplication.smack.SmackManager;
+
+import org.jivesoftware.smack.roster.RosterEntry;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * User: yangenneng
@@ -25,22 +30,16 @@ public class PersonDAO {
             }
 
             //把数据库中已有的数据拿出来
-            DbConnection connection=new DbConnection();
-            SQLiteDatabase db=connection.getConnection();
-            Cursor cursor=db.query("tb_person",null,null,null,null,null,null);
-            while ( cursor.moveToNext() ){
-                int namenum=cursor.getColumnIndex("name");
-                int usernamenum=cursor.getColumnIndex("username");
-                int passwordnum=cursor.getColumnIndex("password");
 
-                String name=cursor.getString(namenum);
-                String username=cursor.getString(usernamenum);
-                String password=cursor.getString(passwordnum);
-
-                Person person=new Person(name,username,password);
+            Set<RosterEntry> friends = SmackManager.getInstance().getAllFriends();
+            for(RosterEntry friend:friends){
+                String name=friend.getName();
+                String username=friend.getUser();
+                Person person=new Person(name,username);
                 personList.add(person);
-                cursor.moveToNext();
             }
+
+
 
         }
 
@@ -99,7 +98,7 @@ public class PersonDAO {
             DbConnection conn=new DbConnection();
             SQLiteDatabase db=conn.getConnection();
             String sql="insert into tb_person(name,username,password) values('"
-                    +person.getName()+"','"+person.getUsername()+"','"+person.getPassword()+"')";
+                    +person.getName()+"','"+person.getUsername()+"')";
             db.execSQL(sql);
             db.close();
             return true;
@@ -115,7 +114,7 @@ public class PersonDAO {
         }
         for ( int i = 0; i < personList.size(); i++ ) {
             Person book=personList.get(i);
-            if(username.equals(book.getUsername()) && password.equals(book.getPassword())){
+            if(username.equals(book.getUsername())){
                 return true;
             }
         }
